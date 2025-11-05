@@ -1,0 +1,44 @@
+name: Build Android WebView App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Java for Gradle
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Step 3: Extract your uploaded ZIP file
+      - name: Extract Android project
+        run: |
+          unzip -o "ACS_Frb_26_Android_Project.zip" -d app_src
+          echo "✅ Extracted ACS_Frb_26_Android_Project.zip to app_src/"
+
+      # Step 4: Make gradlew executable
+      - name: Make Gradle wrapper executable
+        run: chmod +x app_src/gradlew
+
+      # Step 5: Build debug APK
+      - name: Build Debug APK
+        working-directory: app_src
+        run: ./gradlew assembleDebug
+
+      # Step 6: Upload the built APK as artifact
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ACS_Frb_26_Debug_APK
+          path: app_src/app/build/outputs/apk/debug/*.apk
