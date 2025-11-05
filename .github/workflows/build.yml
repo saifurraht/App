@@ -1,4 +1,4 @@
-name: Build Android WebView App
+name: Build ACS_Frb_26 WebView App
 
 on:
   push:
@@ -10,41 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Set up JDK 17 (for Android builds)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # Step 3: Install Gradle (since gradlew is missing)
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # Step 4: Extract ZIP
       - name: Extract Android project
         run: |
-          unzip -o "ACS_Frb_26_Android_Project.zip" -d app_src
-          echo "✅ Extracted ZIP to app_src/"
-          ls -R app_src
+          unzip -o "ACS_Frb_26_Android_Project.zip" -d project
+          echo "✅ Extracted project files:"
+          ls -R project | head -40
 
-      - name: Detect Gradle folder
-        id: detect
-        run: |
-          GRADLEW_PATH=$(find app_src -name "gradlew" | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "❌ gradlew not found!"
-            exit 1
-          fi
-          echo "✅ Found Gradle wrapper at: $GRADLEW_PATH"
-          echo "gradle_path=$(dirname $GRADLEW_PATH)" >> $GITHUB_OUTPUT
+      # Step 5: Build debug APK using Gradle
+      - name: Build APK
+        working-directory: project
+        run: gradle assembleDebug
 
-      - name: Make Gradle wrapper executable
-        run: chmod +x "${{ steps.detect.outputs.gradle_path }}/gradlew"
-
-      - name: Build Debug APK
-        working-directory: ${{ steps.detect.outputs.gradle_path }}
-        run: ./gradlew assembleDebug
-
-      - name: Upload built APK
+      # Step 6: Upload APK as artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ACS_Frb_26_Debug_APK
-          path: ${{ steps.detect.outputs.gradle_path }}/app/build/outputs/apk/debug/*.apk
+          path: project/app/build/outputs/apk/debug/*.apk
